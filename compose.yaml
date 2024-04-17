@@ -1,4 +1,3 @@
-version: "2"
 x-redash-service: &redash-service
   image: redash/redash:8.0.0.b32245
   depends_on:
@@ -6,9 +5,13 @@ x-redash-service: &redash-service
     - redis
   env_file: ./.env
   restart: unless-stopped
+  networks:
+    - net
 
 x-infra-service: &infra-service
   restart: unless-stopped
+  networks:
+    - net
 
 services:
   server:
@@ -17,7 +20,9 @@ services:
     ports:
       - "5000:5000"
     environment:
-      REDASH_WEB_WORKERS: 4
+      REDASH_WEB_WORKERS: 1
+    networks:
+      - net
   
   scheduler:
     <<: *redash-service
@@ -55,16 +60,10 @@ services:
     ports:
       - "5432:5432"
 
-  nginx:
-    <<: *infra-service
-    image: redash/nginx:latest
-    ports:
-      - "80:80"
-    depends_on:
-      - server
-    links:
-      - server:redash
-
 volumes:
   postgres:
   redash:
+
+networks:
+  net:
+    driver: bridge
